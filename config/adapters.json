@@ -1,0 +1,4 @@
+{
+    "venom": "./VenomWhatsappAdapter",
+    "meta": "./MetaWhatsappAdapter"
+}

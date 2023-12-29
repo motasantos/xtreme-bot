@@ -1,0 +1,27 @@
+2023/12/21-19:09:19.208 256b Reusing MANIFEST /home/jailson/Projetos/chatbots/xtreme-bot/tokens/xtreme-bot/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2023/12/21-19:09:19.209 256b Recovering log #2243
+2023/12/21-19:09:19.211 256b Reusing old log /home/jailson/Projetos/chatbots/xtreme-bot/tokens/xtreme-bot/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/002243.log 
+2023/12/21-19:09:31.127 256b Level-0 table #2251: started
+2023/12/21-19:09:31.139 256b Level-0 table #2251: 51247 bytes OK
+2023/12/21-19:09:31.142 256b Delete type=0 #2243
+2023/12/21-19:09:31.161 256b Manual compaction at level-0 from ' \x1f\x02\x00\x00\x00' @ 72057594037927935 : 1 .. '  \x02\x00\x00\x00' @ 0 : 0; will stop at (end)
+2023/12/21-19:09:31.162 2570 Level-0 table #2253: started
+2023/12/21-19:09:31.163 2570 Level-0 table #2253: 476 bytes OK
+2023/12/21-19:09:31.164 2570 Delete type=0 #2250
+2023/12/21-19:09:31.169 256b Manual compaction at level-0 from '  \x02\x00\x00\x00' @ 72057594037927935 : 1 .. ' !\x02\x00\x00\x00' @ 0 : 0; will stop at '  \x02\x00\x00\x05' @ 8147869 : 0
+2023/12/21-19:09:31.169 256b Compacting 1@0 + 1@1 files
+2023/12/21-19:09:31.187 256b Generated table #2254@0: 1514 keys, 31377 bytes
+2023/12/21-19:09:31.187 256b Compacted 1@0 + 1@1 files => 31377 bytes
+2023/12/21-19:09:31.188 256b compacted to: files[ 0 1 8 0 0 0 0 ]
+2023/12/21-19:09:31.189 256b Delete type=2 #2253
+2023/12/21-19:09:31.197 256b Manual compaction at level-0 from '  \x02\x00\x00\x05' @ 8147869 : 0 .. ' !\x02\x00\x00\x00' @ 0 : 0; will stop at (end)
+2023/12/21-19:09:32.470 256d Compacting 1@1 + 2@2 files
+2023/12/21-19:09:32.649 256d Generated table #2255@1: 47028 keys, 2211751 bytes
+2023/12/21-19:09:32.844 256d Generated table #2256@1: 56512 keys, 2211287 bytes
+2023/12/21-19:09:32.862 256d Generated table #2257@1: 1530 keys, 30897 bytes
+2023/12/21-19:09:32.862 256d Compacted 1@1 + 2@2 files => 4453935 bytes
+2023/12/21-19:09:32.863 256d compacted to: files[ 0 0 9 0 0 0 0 ]
+2023/12/21-19:09:32.863 256d Delete type=2 #2251
+2023/12/21-19:09:32.863 256d Delete type=2 #2247
+2023/12/21-19:09:32.863 256d Delete type=2 #2246
+2023/12/21-19:09:32.863 256d Delete type=2 #2254

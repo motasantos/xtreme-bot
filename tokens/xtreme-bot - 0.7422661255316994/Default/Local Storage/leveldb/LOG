@@ -1,0 +1,5 @@
+2023/12/28-17:59:00.848 33ca17 Creating DB /home/jailson/Projetos/chatbots/xtreme-bot/tokens/xtreme-bot - 0.7422661255316994/Default/Local Storage/leveldb since it was missing.
+2023/12/28-17:59:00.859 33ca17 Reusing MANIFEST /home/jailson/Projetos/chatbots/xtreme-bot/tokens/xtreme-bot - 0.7422661255316994/Default/Local Storage/leveldb/MANIFEST-000001
+2023/12/29-03:19:50.845 33ca19 Level-0 table #5: started
+2023/12/29-03:19:50.853 33ca19 Level-0 table #5: 18796 bytes OK
+2023/12/29-03:19:50.856 33ca19 Delete type=0 #3
