@@ -26,6 +26,7 @@ class OpenAIChatManager {
         }
 
         const params: AssistantParams = JSON.parse(assistantData);
+        console.log(JSON.stringify(assistantData))
 
         if (params.id) {
             try {
@@ -53,15 +54,19 @@ class OpenAIChatManager {
     }
 
     async getOrCreateThread(customerChat: CustomerChat): Promise<string> {
+        // Garantir que threadId seja inicializado como uma string vazia se for undefined
         if (!customerChat.threadId) {
             // Se não existir uma thread, crie uma nova
             const thread = await openaiClient.beta.threads.create();
             customerChat.threadId = thread.id;
             await this.saveChatState(customerChat);
         }
-
+    
+        // Como agora sabemos que threadId é definido, podemos retorná-lo com segurança
         return customerChat.threadId;
     }
+    
+    
 
     async sendMessageAndGetResponse(customerChat: CustomerChat, messageContent: string): Promise<string> {
         const threadId = await this.getOrCreateThread(customerChat);

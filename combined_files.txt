@@ -1,0 +1,616 @@
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/adapters/AdapterFactory.ts
+----------------
+// src/adapters/AdapterFactory.ts
+
+import { IChatAdapter } from "../interfaces/IChatAdapter";
+import * as fs from 'fs';
+import * as path from 'path';
+
+export class AdapterFactory {
+    static async createAdapter(adapterName: string): Promise<IChatAdapter> {
+        const configPath = path.resolve(__dirname, '../../config/adapters.json');
+        const adapterConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        const adapterPath = adapterConfig[adapterName];
+
+        if (!adapterPath) {
+            throw new Error(`Adapter não encontrado: ${adapterName}`);
+        }
+
+        const modulePath = path.resolve(__dirname, adapterPath);
+        const AdapterModule = await import(modulePath);
+        return new AdapterModule.default();
+    }
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/adapters/MetaWhatsappAdapter.ts
+----------------
+// src/adapters/MetaWhatsAppAdapter.ts
+
+import { ClientType } from '../enums/ClientType';
+import { IChatAdapter } from '../interfaces/IChatAdapter';
+
+export default class MetaWhatsAppAdapter implements IChatAdapter {
+    clientType = ClientType.WhatsApp;
+
+    constructor() {
+        // Configuração específica para a API do WhatsApp da Meta
+    }
+    initialize(): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    async sendMessage(chatId: string, message: string): Promise<void> {
+        // Implementação para enviar mensagens usando a API do WhatsApp da Meta
+    }
+
+    onMessage(callback: (message: string) => void): void {
+        // Implementação para receber mensagens da API do WhatsApp da Meta
+    }
+
+    // Outros métodos específicos para a API do WhatsApp da Meta...
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/adapters/VenomWhatsappAdapter.ts
+----------------
+    // src/adapters/VenomWhatsAppAdapter.ts
+
+import  venom,  { Message, Whatsapp, create } from "venom-bot"
+import { IChatAdapter } from '../interfaces/IChatAdapter';
+import { ClientType } from "../enums/ClientType";
+
+
+    export default class VenomWhatsAppAdapter implements IChatAdapter {
+        clientType = ClientType.WhatsApp;
+        private client: Whatsapp | null = null;
+
+        async initialize(): Promise<void> {
+
+            try {
+                this.client = await create({
+                    session: "xtreme-bot - " + Math.random(), // Nome da sessão
+                    disableWelcome: true,  // Desabilitar mensagem de boas-vindas do venom-bot
+                    debug: true, // Habilita logs detalhados
+                    logQR: true, // Exibe o QR code no console
+    
+                    // Outras configurações conforme necessário
+                });
+
+                // this.client.onMessage((message) => {
+                //     console.log(message);
+                // });
+            } catch (err) {
+                console.error(err);
+                throw err;
+            }
+        }
+
+        async sendMessage(chatId: string, message: string): Promise<void> {
+            if (!this.client) {
+                throw new Error("Cliente WhatsApp não inicializado");
+            }
+            await this.client.sendText(chatId, message);
+        }
+
+        onMessage(callback: (message: Message) => void): void {
+            if (this.client) {
+                this.client.onMessage((message) => {
+                    if (!message.body || message.isGroupMsg) return
+                    callback(message);
+                });
+            } else {
+                console.error("Cliente WhatsApp não foi inicializado.");
+            }
+            
+        }
+
+        // Outros métodos...
+    }
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/ai/AssistantManager.ts
+----------------
+import { redis } from '../lib/redis';
+import openaiClient from './OpenaiClient';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+interface AssistantParams {
+    id: string;
+    name: string;
+    instructions: string;
+    model: string;
+}
+
+export class AssistantManager {
+    private key = "assistant:assistant-extreme-fight";
+    private assistantId: string | undefined;
+
+    constructor() {
+        this.initializeAssistant();
+    }
+    
+    private async initializeAssistant() {
+        const assistantData = await redis.get(this.key);
+        if (!assistantData) {
+            throw new Error("Dados do assistente não encontrados no Redis.");
+        }
+
+        const params: AssistantParams = JSON.parse(assistantData);
+        try {
+            const existingAssistant = await openaiClient.beta.assistants.retrieve(params.id);
+            console.debug('ExistingAssistant: ' + existingAssistant);
+            this.assistantId = existingAssistant.id;
+        } catch {
+            const newAssistant = await openaiClient.beta.assistants.create(params);
+            console.debug('NewAssistant: ' + newAssistant);
+            this.assistantId = newAssistant.id;
+            await redis.set(this.key, JSON.stringify({...params, id: newAssistant.id}));
+        }
+    }
+
+    getAssistantId(): string {
+        if (!this.assistantId) {
+            throw new Error("Assistant ID is not set");
+        }
+        return this.assistantId;
+    }
+
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/ai/ChatResponseGenerator.ts
+----------------
+import { Message, CustomerChat } from '../chat/UserMessagesManager';
+import { redis } from '../lib/redis';
+import { AssistantManager } from './AssistantManager';
+import OpenAIChatManager from './OpenAiChatManager';
+
+export async function generateChatResponse(openAIChatManager: OpenAIChatManager, customerChat: CustomerChat, newMessage: Message): Promise<string> {
+    try {
+        console.debug('generateChatResponse : NewMessage = ' +newMessage)
+        // Adiciona a nova mensagem ao histórico de conversas
+        //customerChat.messages.push(newMessage);
+
+
+        // Envia a mensagem para o assistente e processa a resposta
+        const responseContent = await openAIChatManager.sendMessageAndGetResponse(customerChat, newMessage.content);
+
+        return responseContent;
+    } catch (error) {
+        console.error("Erro ao gerar resposta do ChatGPT:", error);
+        return "Desculpe, ocorreu um erro.";
+    }
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/ai/OpenAiChatManager.ts
+----------------
+import openaiClient from './OpenaiClient';
+import { redis } from '../lib/redis';
+import { CustomerChat } from '../chat/UserMessagesManager';
+
+
+interface AssistantParams {
+    id?: string;
+    name: string;
+    model: string;
+    instructions: string;
+}
+
+class OpenAIChatManager {
+
+    private key = "assistant:assistant-extreme-fight";
+    private assistantId?: string;
+
+    constructor() {
+        this.initializeAssistant().catch(error => console.error('Error initializing assistant:', error));
+    }
+
+    private async initializeAssistant() {
+        const assistantData = await redis.get(this.key);
+        if (!assistantData) {
+            throw new Error("Dados do assistente não encontrados no Redis.");
+        }
+
+        const params: AssistantParams = JSON.parse(assistantData);
+        console.log(JSON.stringify(assistantData))
+
+        if (params.id) {
+            try {
+                const existingAssistant = await openaiClient.beta.assistants.retrieve(params.id);
+                this.assistantId = existingAssistant.id;
+            } catch {
+                // Se não conseguir recuperar, cria um novo
+                const newAssistant = await openaiClient.beta.assistants.create(params);
+                this.assistantId = newAssistant.id;
+                await redis.set(this.key, JSON.stringify({...params, id: newAssistant.id}));
+            }
+        } else {
+            // Se não houver ID, cria um novo assistente
+            const newAssistant = await openaiClient.beta.assistants.create(params);
+            this.assistantId = newAssistant.id;
+            await redis.set(this.key, JSON.stringify({...params, id: newAssistant.id}));
+        }
+    }
+
+    getAssistantId(): string {
+        if (!this.assistantId) {
+            throw new Error("Assistant ID is not set");
+        }
+        return this.assistantId;
+    }
+
+    async getOrCreateThread(customerChat: CustomerChat): Promise<string> {
+        // Garantir que threadId seja inicializado como uma string vazia se for undefined
+        if (!customerChat.threadId) {
+            // Se não existir uma thread, crie uma nova
+            const thread = await openaiClient.beta.threads.create();
+            customerChat.threadId = thread.id;
+            await this.saveChatState(customerChat);
+        }
+    
+        // Como agora sabemos que threadId é definido, podemos retorná-lo com segurança
+        return customerChat.threadId;
+    }
+    
+    
+
+    async sendMessageAndGetResponse(customerChat: CustomerChat, messageContent: string): Promise<string> {
+        const threadId = await this.getOrCreateThread(customerChat);
+
+        // Adicionar mensagem à thread (sempre criando uma nova execução)
+        await openaiClient.beta.threads.messages.create(threadId, {
+            role: 'user',
+            content: messageContent
+        });
+
+        // Iniciar execução com o assistente
+        const run = await openaiClient.beta.threads.runs.create(threadId, {
+            assistant_id: this.getAssistantId()
+        });
+
+        // Aguardar até que a execução esteja concluída
+        let runStatus;
+        do {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Esperar 500ms
+            runStatus = (await openaiClient.beta.threads.runs.retrieve(threadId, run.id)).status;
+        } while (runStatus !== 'completed');
+
+        // Obter a última mensagem do assistente
+        const messages = await openaiClient.beta.threads.messages.list(threadId);
+        const lastMessage = messages.body.data.find((m: { role: string; }) => m.role === 'assistant')?.content;
+
+        console.log(JSON.stringify(lastMessage));
+
+        return lastMessage[0].text.value || "Não foi possível obter uma resposta.";
+    }
+
+    async saveChatState(customerChat: CustomerChat): Promise<void> {
+        await redis.set(`customerChat:${customerChat.id}`, JSON.stringify(customerChat));
+    }
+
+    async getChatState(customerId: string): Promise<CustomerChat | null> {
+        const rawData = await redis.get(`customerChat:${customerId}`);
+        return rawData ? JSON.parse(rawData) : null;
+    }
+}
+
+export default OpenAIChatManager;
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/ai/OpenaiClient.ts
+----------------
+const { OpenAI } = require("openai");
+
+require('dotenv').config()
+
+if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is missing");
+  }
+
+const openaiClient = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+})
+
+export default openaiClient;
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/chat/ChatManager.ts
+----------------
+import { UserMessagesManager, Message } from './UserMessagesManager';
+import { IChatAdapter } from '../interfaces/IChatAdapter';
+import { generateChatResponse } from '../ai/ChatResponseGenerator';
+import OpenAIChatManager from '../ai/OpenAiChatManager'; // Importe a nova classe
+
+export class ChatManager {
+    private adapter: IChatAdapter;
+    private userMessagesManager: UserMessagesManager;
+    private openAIChatManager: OpenAIChatManager;
+
+    constructor(adapter: IChatAdapter, userMessagesManager: UserMessagesManager, openAIChatManager: OpenAIChatManager) {
+        this.adapter = adapter;
+        this.userMessagesManager = userMessagesManager;
+        this.openAIChatManager = openAIChatManager; // Use OpenAIChatManager
+        this.adapter.onMessage(this.handleMessage.bind(this));
+    }
+
+    private async handleMessage(message: any): Promise<void> {
+        
+        const customerPhone = message.from;
+        let chatState = await this.userMessagesManager.getChat(customerPhone);
+
+        if (!chatState) {
+            // Inicialize chatState se for nulo
+            chatState = {
+                status: "open",
+                id: customerPhone,
+                threadId: "", // Defina o threadId, se necessário
+                chatAt: new Date().toISOString(),
+                customer: {
+                    name: "", // Nome do cliente, se disponível
+                    phone: customerPhone
+                },
+                messages: []
+            };
+        }
+    
+        const isNewChatState = !chatState;
+        if (isNewChatState) {
+            chatState = { status: "open", id: customerPhone, threadId: "", chatAt: new Date().toISOString(), customer: { name: "", phone: customerPhone }, messages: [] };
+        }
+
+        // Adiciona a mensagem recebida ao chatState
+        const receivedMessage: Message = { role: 'user', content: message.content, dateTime: new Date().toISOString() };
+        chatState.messages.push(receivedMessage);
+
+        // Processa a resposta
+        const response = await generateChatResponse(this.openAIChatManager, chatState, receivedMessage);
+
+        // Adiciona a resposta do assistente ao chatState
+        const responseMessage: Message = { role: 'assistant', content: response, dateTime: new Date().toISOString() };
+        chatState.messages.push(responseMessage);
+
+        // Atualiza o chatState no UserMessagesManager
+        await this.userMessagesManager.createOrUpdateChat(customerPhone, chatState);
+
+        // Envia a resposta
+        await this.adapter.sendMessage(customerPhone, response);
+    }
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/chat/UserMessagesManager.ts
+----------------
+import { ChatCompletionMessageParam } from "openai/resources";
+import { redis } from "../lib/redis";
+
+export interface Message {
+    role: string;
+    content: string;
+    dateTime: string;
+}
+
+export interface CustomerChat {
+    status?: "open" | "closed";
+    id: string;
+    threadId: string;
+    chatAt: string;
+    customer: {
+        name: string;
+        phone: string;
+    };
+    messages: Message[];
+}
+
+export class UserMessagesManager {
+    async createOrUpdateChat(customerPhone: string, chatData: Partial<CustomerChat>): Promise<void> {
+        const key = `customerChat:${customerPhone}`;
+        let chat = await this.getChat(customerPhone);
+    
+        if (chat) {
+            // Atualize apenas os campos fornecidos em chatData
+            Object.assign(chat, chatData);
+        } else {
+            // Criar nova conversa
+            chat = {
+                ...chatData,
+                id: customerPhone,
+                chatAt: new Date().toISOString(),
+                messages: [],
+            } as CustomerChat;
+            
+        }
+    
+        // Armazenar o objeto customerChat no Redis
+        await redis.set(key, JSON.stringify(chat));
+    }
+    
+
+    async getChat(customerPhone: string): Promise<CustomerChat | null> {
+        const key = `customerChat:${customerPhone}`;
+        try {
+            const chatString = await redis.get(key);
+            return chatString ? JSON.parse(chatString) : null;
+        } catch (error) {
+            console.error(`Error parsing chat data for ${customerPhone}:`, error);
+            // Handle the error appropriately
+            return null;
+        }
+    }
+    
+
+    async closeChat(customerPhone: string): Promise<void> {
+        await this.createOrUpdateChat(customerPhone, { status: "closed" });
+    }
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/enums/ClientType.ts
+----------------
+// src/enums/ClientType.ts
+
+export enum ClientType {
+    WhatsApp = "whatsapp",
+    Telegram = "telegram",
+    Discord = "discord",
+    Slack = "slack",
+    Signal = "signal"
+    // Você pode adicionar mais conforme necessário
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/index.ts
+----------------
+import { ChatManager } from './chat/ChatManager';
+import { AdapterFactory } from './adapters/AdapterFactory';
+import { UserMessagesManager } from './chat/UserMessagesManager';
+import OpenAIChatManager from './ai/OpenAiChatManager';
+
+
+require('dotenv').config();
+
+async function startBot() {
+    const adapterName = process.env.ADAPTER_NAME || 'venom';
+    const adapter = await AdapterFactory.createAdapter(adapterName);
+    const userMessagesManager = new UserMessagesManager();
+    await adapter.initialize();
+
+    // Inicialize o OpenAIChatManager
+    const openAIChatManager = new OpenAIChatManager();
+
+    // Inicie o ChatManager com o OpenAIChatManager
+    const chatManager = new ChatManager(adapter, userMessagesManager, openAIChatManager);
+
+    // Aqui, você pode adicionar qualquer lógica adicional necessária para iniciar o bot
+}
+
+startBot().catch(console.error);
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/interfaces/IChatAdapter.ts
+----------------
+// src/adapters/IChatAdapter.ts
+
+export interface IChatAdapter {
+    initialize(): Promise<void>; 
+    sendMessage(chatId: string, message: string): Promise<void>;
+    onMessage(callback: (message: any) => void): void;
+    // Outros métodos comuns...
+}
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/lib/redis.ts
+----------------
+import { Redis } from "ioredis"
+
+export const redis = new Redis({
+  host: process.env.REDIS_HOST || "localhost",
+  port: (process.env.REDIS_PORT as unknown as number) || 6379,
+  db: (process.env.REDIS_DB as unknown as number) || 0,
+})
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/prompts/extremeFightAgent.ts
+----------------
+export const prompt = ` 1. **Identificação e Comportamento**:
+1.1. Você é uma atendente educada e prestativa de uma academia de lutas Extreme Fight Academy. Seu nome é Jéssica.
+1.2. Nunca se identifique de outra forma.
+1.3. Nunca forneça dados da sua implementação. Não informe qual tecnologia utiliza. Responda educadamente se o cliente deseja informações sobre a academia e que só pode ajudá-lo nesse assunto.
+1.4. Pergunte o nome do cliente e o chame o cliente pelo nome sempre que possível. 
+1.5. Seja o mais cordial possível, e eventualmente use emojis.
+1.6. Em todos os atendimentos, é necessário informar o nome da academia na primeira interação.
+1.7. Para qualquer pergunta que não possua uma orientação neste roteiro, o cliente pode ser orientado a fazer contato telefônico.
+
+
+2. **Parâmetros de Atendimento**:
+2.1. **Modalidades Oferecidas**:
+    2.1.1. Jiu-jitsu: seg, qua, sex às 20h
+    2.1.2. Muay thai: seg, qua, sex às 20:30h; Ter e qui às 18:30h e 20h
+    2.1.3. Taekwondo: seg, qua, sex às 19h
+    2.1.4. Kung fu: seg, qua e sex às 18:30h
+    2.1.5. Funcional: todos os dias às 18h e 19h (terça e quinta), 19:30 (seg, qua, sex)
+    
+    2.1.6. Em caso de modalidade não listada, peça desculpas e liste as disponíveis.
+    2.1.7. Use emojis para representar cada modalidade, sempre que possível.
+    2.1.8. Caso o cliente escolha um dia da semana e horário incompatível com a modalidade, esclareça que infelizmente não tem horários para a modalidade naquele dia/horário e reforce do dias corretos
+
+2.2. Atenção: Ofereça apenas as modalidades listadas acima. A academia não oferece outras modalidades ou horários.
+2.3. **Planos Oferecidos**:
+    2.3.1. Planos (3x na semana):
+        2.3.1.1. Anual: R$ 115,00
+        2.3.1.2. Semestral: R$ 125,00
+        2.3.1.3. Trimestral: R$ 135,00
+        2.3.1.4. Mensal: R$ 150,00 + R$ 100,00 (taxa de matrícula)
+    2.3.2. Planos (todos os dias [neste o cliente pode escolher duas modalidades]) :
+        2.3.2.1. Anual: R$ 180,00
+        2.3.2.2. Semestral: R$ 190,00
+        2.3.2.3. Trimestral: R$ 200,00
+        2.3.2.4. Mensal: R$ 250,00 + R$ 100,00 (taxa de matrícula)
+
+3. **Dados de Contato e Localização**:
+3.1. **Endereço da Academia**: QI 02 Lote 440 Setor de Indústria, Gama, DF, 72445020
+3.2. **Telefone da Academia**: (61) 3967-2354
+3.3  **Link de localização da academia: https://maps.app.goo.gl/canyvEnRCsSZPqDX7
+
+4. **Roteiro de Atendimento para a Academia de Lutas**:
+4.1. **Saudação Inicial**:
+    4.1.1. Cumprimente cordialmente e sempre apresente o nome da academia. Responda o que for perguntado. Mostre-se disponível. 
+    4.1.2. Caso o cliente peça uma modalidade não listada, informe e liste as disponíveis.
+4.2. **Coleta de Informações Iniciais**:
+    4.2.1. Peça o nome do cliente para registro.
+    4.2.2. Garanta a confidencialidade dos dados.
+4.3. **Interesse em Conhecer a Academia**:
+    4.3.1. Pergunte o motivo do contato.
+4.4. **Agendamento de Aula Experimental ou Visita**:
+    4.4.1. Forneça opções de dias da semana e horários. Sempre ofereça as opções antes de enviar o link do formulário.
+    4.4.2. Uma vez que o cliente escolha não confirme em nenhuma hipótese o agendamento, mas informe o cliente de que o agendamento será realizado assim que preencher o formulário.
+    4.4.2. Informe que o agendamento é feito a partir do preenchimento do formulário. Forneça o link do formulário de agendamento: https://docs.google.com/forms/d/e/1FAIpQLSfUe3XFY5Uoj7z3mW_TLbQ__Or33ldQfX9czDoDA8sL-Gdrqg/viewform?usp=sf_link
+    4.4.3. Agradeça e pergunte se pode ajudar em algo mais. 
+4.5. **Informações sobre Aula Experimental**: Instruções sobre a aula.
+4.6. **Localização da Academia**: Forneça o endereço.
+4.7. **Informações Adicionais**: Disponibilidade para tirar dúvidas.
+4.8. **Confirmação da Visita/Aula Experimental**: Finalize o agendamento.
+4.9. **Despedida e Agradecimento**: Mensagem de despedida.
+
+5. **Observações Importantes**:
+5.1. Ao ser questionada sobre uma modalidade não listada, informe que não a possui e liste as disponíveis.
+5.2. Exija que o cliente seja específico. Nunca é possível agendar uma aula experimental ou visita para amanhã. O cliente deve fornecer o dia da semana e o horário dentre as opções oferecidas pela academia.
+5.3. A academia possui vestiários e banheiros feminino e masculino.
+5.4. A academia possui estacionamento amplo.
+5.5. A academia não aceita pets.
+5.6. Crianças podem ser levadas, mas ficam sob a responsabilidade dos pais ou responsáveis. A academia não possui espaço kids.
+5.7. O cancelamento deverá ser feito presencialmente na academia.
+5.8. A matrícula só poderá ser feita presencialmente na academia. É necessário documento original com foto, e comprovante de residência.
+5.9. Sempre que encaminhar o endereço, encaminhar também o link da localização.
+5.10. As mensagens de resposta para o cliente devem respeitar a quantidade máxima de tokens na resposta (256 tokens)
+
+
+
+`
+
+
+----------------
+File: /home/jailson/Projetos/chatbots/xtreme-bot/src/utils/initPrompt.ts
+----------------
+import { prompt } from "../prompts/extremeFightAgent"
+
+export function initPrompt(): string {
+  return prompt
+}
+
+

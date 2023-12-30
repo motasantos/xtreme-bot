@@ -630,3 +630,66 @@
 2023/12/29-10:31:52.507 33ca19 compacted to: files[ 0 0 1 0 0 0 0 ]
 2023/12/29-10:31:52.508 33ca19 Delete type=2 #187
 2023/12/29-10:31:52.508 33ca19 Delete type=2 #185
+2023/12/29-14:41:25.876 33ca19 Level-0 table #190: started
+2023/12/29-14:41:25.927 33ca19 Level-0 table #190: 1198802 bytes OK
+2023/12/29-14:41:25.929 33ca19 Delete type=0 #186
+2023/12/29-14:42:41.011 33ca19 Compacting 1@1 + 1@2 files
+2023/12/29-14:42:41.116 33ca19 Generated table #191@1: 38013 keys, 1061731 bytes
+2023/12/29-14:42:41.116 33ca19 Compacted 1@1 + 1@2 files => 1061731 bytes
+2023/12/29-14:42:41.117 33ca19 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/29-14:42:41.117 33ca19 Delete type=2 #190
+2023/12/29-14:42:41.117 33ca19 Delete type=2 #188
+2023/12/29-18:53:19.221 33ca19 Level-0 table #193: started
+2023/12/29-18:53:19.345 33ca19 Level-0 table #193: 1192233 bytes OK
+2023/12/29-18:53:19.349 33ca19 Delete type=0 #189
+2023/12/29-18:53:43.644 33ca17 Compacting 1@1 + 1@2 files
+2023/12/29-18:53:43.881 33ca17 Generated table #194@1: 44468 keys, 1212450 bytes
+2023/12/29-18:53:43.882 33ca17 Compacted 1@1 + 1@2 files => 1212450 bytes
+2023/12/29-18:53:43.890 33ca17 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/29-18:53:43.890 33ca17 Delete type=2 #191
+2023/12/29-18:53:43.890 33ca17 Delete type=2 #193
+2023/12/29-23:04:03.778 33ca19 Level-0 table #196: started
+2023/12/29-23:04:03.889 33ca19 Level-0 table #196: 1188272 bytes OK
+2023/12/29-23:04:03.892 33ca19 Delete type=0 #192
+2023/12/29-23:07:35.797 33ca19 Compacting 1@1 + 1@2 files
+2023/12/29-23:07:35.954 33ca19 Generated table #197@1: 50799 keys, 1357727 bytes
+2023/12/29-23:07:35.954 33ca19 Compacted 1@1 + 1@2 files => 1357727 bytes
+2023/12/29-23:07:35.955 33ca19 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/29-23:07:35.956 33ca19 Delete type=2 #196
+2023/12/29-23:07:35.956 33ca19 Delete type=2 #194
+2023/12/30-03:14:52.779 33ca19 Level-0 table #199: started
+2023/12/30-03:14:52.866 33ca19 Level-0 table #199: 1191085 bytes OK
+2023/12/30-03:14:52.869 33ca19 Delete type=0 #195
+2023/12/30-03:18:24.518 33ca19 Compacting 1@1 + 1@2 files
+2023/12/30-03:18:24.743 33ca19 Generated table #200@1: 57108 keys, 1503793 bytes
+2023/12/30-03:18:24.743 33ca19 Compacted 1@1 + 1@2 files => 1503793 bytes
+2023/12/30-03:18:24.745 33ca19 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/30-03:18:24.745 33ca19 Delete type=2 #199
+2023/12/30-03:18:24.745 33ca19 Delete type=2 #197
+2023/12/30-07:25:41.099 33ca17 Level-0 table #202: started
+2023/12/30-07:25:41.200 33ca17 Level-0 table #202: 1190014 bytes OK
+2023/12/30-07:25:41.204 33ca17 Delete type=0 #198
+2023/12/30-07:29:13.175 33ca17 Compacting 1@1 + 1@2 files
+2023/12/30-07:29:13.407 33ca17 Generated table #203@1: 63466 keys, 1650211 bytes
+2023/12/30-07:29:13.407 33ca17 Compacted 1@1 + 1@2 files => 1650211 bytes
+2023/12/30-07:29:13.408 33ca17 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/30-07:29:13.408 33ca17 Delete type=2 #200
+2023/12/30-07:29:13.408 33ca17 Delete type=2 #202
+2023/12/30-11:36:30.153 33ca19 Level-0 table #205: started
+2023/12/30-11:36:30.283 33ca19 Level-0 table #205: 1193866 bytes OK
+2023/12/30-11:36:30.285 33ca19 Delete type=0 #201
+2023/12/30-11:39:54.407 33ca19 Compacting 1@1 + 1@2 files
+2023/12/30-11:39:54.669 33ca19 Generated table #206@1: 69836 keys, 1795665 bytes
+2023/12/30-11:39:54.669 33ca19 Compacted 1@1 + 1@2 files => 1795665 bytes
+2023/12/30-11:39:54.671 33ca19 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/30-11:39:54.671 33ca19 Delete type=2 #203
+2023/12/30-11:39:54.671 33ca19 Delete type=2 #205
+2023/12/30-15:49:43.301 33ca17 Level-0 table #208: started
+2023/12/30-15:49:43.391 33ca17 Level-0 table #208: 1185730 bytes OK
+2023/12/30-15:49:43.393 33ca17 Delete type=0 #204
+2023/12/30-15:50:35.324 33ca17 Compacting 1@1 + 1@2 files
+2023/12/30-15:50:35.468 33ca17 Generated table #209@1: 76195 keys, 1941869 bytes
+2023/12/30-15:50:35.468 33ca17 Compacted 1@1 + 1@2 files => 1941869 bytes
+2023/12/30-15:50:35.469 33ca17 compacted to: files[ 0 0 1 0 0 0 0 ]
+2023/12/30-15:50:35.469 33ca17 Delete type=2 #208
+2023/12/30-15:50:35.470 33ca17 Delete type=2 #206

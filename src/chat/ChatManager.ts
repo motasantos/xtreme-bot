@@ -16,18 +16,16 @@ export class ChatManager {
     }
 
     private async handleMessage(message: any): Promise<void> {
+        
         const customerPhone = message.from;
         let chatState = await this.userMessagesManager.getChat(customerPhone);
 
-        let isNewChatState = false;
-
         if (!chatState) {
-            isNewChatState = true;
+            // Inicialize chatState se for nulo
             chatState = {
                 status: "open",
                 id: customerPhone,
                 threadId: "", // Defina o threadId, se necessário
-                // Remova runId, não é mais necessário
                 chatAt: new Date().toISOString(),
                 customer: {
                     name: "", // Nome do cliente, se disponível
@@ -36,35 +34,27 @@ export class ChatManager {
                 messages: []
             };
         }
-
-        const receivedMessage: Message = {
-            role: 'user',
-            content: message.content,
-            dateTime: new Date().toISOString()
-        };
-
-
-        // Se for um novo chatState, cria a Thread (e atualiza o customChat)
+    
+        const isNewChatState = !chatState;
         if (isNewChatState) {
-            const threadId = await this.openAIChatManager.getOrCreateThread(chatState);
+            chatState = { status: "open", id: customerPhone, threadId: "", chatAt: new Date().toISOString(), customer: { name: "", phone: customerPhone }, messages: [] };
         }
 
+        // Adiciona a mensagem recebida ao chatState
+        const receivedMessage: Message = { role: 'user', content: message.content, dateTime: new Date().toISOString() };
+        chatState.messages.push(receivedMessage);
+
+        // Processa a resposta
         const response = await generateChatResponse(this.openAIChatManager, chatState, receivedMessage);
 
-        const responseMessage: Message = {
-            role: 'assistant',
-            content: response,
-            dateTime: new Date().toISOString()
-        };
+        // Adiciona a resposta do assistente ao chatState
+        const responseMessage: Message = { role: 'assistant', content: response, dateTime: new Date().toISOString() };
+        chatState.messages.push(responseMessage);
 
-        chatState.messages.push(receivedMessage, responseMessage);
-
+        // Atualiza o chatState no UserMessagesManager
         await this.userMessagesManager.createOrUpdateChat(customerPhone, chatState);
 
-        console.debug(response);
-
-
+        // Envia a resposta
         await this.adapter.sendMessage(customerPhone, response);
-        
     }
 }

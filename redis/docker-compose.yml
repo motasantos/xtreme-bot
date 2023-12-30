@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  redis-extreme:
+    image: redis:alpine
+    container_name: redis-extreme
+    ports:
+      - "6379:6379"
+
+  redis-metamorfose:
+    image: redis:alpine
+    container_name: redis-metamorfose
+    ports:
+      - "6380:6379"
+
+  phpredmin-extreme:
+    image: sasanrose/phpredmin
+    container_name: phpredmin-extreme
+    ports:
+      - "8081:80"
+    environment:
+      - REDIS_1_HOST=redis-extreme
+      - REDIS_1_PORT=6379
+
+  phpredmin-metamorfose:
+    image: sasanrose/phpredmin
+    container_name: phpredmin-metamorfose
+    ports:
+      - "8082:80"
+    environment:
+      - REDIS_1_HOST=redis-metamorfose
+      - REDIS_1_PORT=6379
