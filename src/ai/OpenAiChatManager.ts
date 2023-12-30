@@ -68,13 +68,16 @@ class OpenAIChatManager {
     
     
 
-    async sendMessageAndGetResponse(customerChat: CustomerChat, messageContent: string): Promise<string> {
+    async sendMessageAndGetResponse(customerChat: CustomerChat): Promise<string> {
         const threadId = await this.getOrCreateThread(customerChat);
-
-        // Adicionar mensagem à thread (sempre criando uma nova execução)
+    
+        // Pegar o conteúdo da última mensagem do usuário no customerChat
+        const lastUserMessage = customerChat.messages[customerChat.messages.length - 1].content;
+    
+        // Adicionar mensagem à thread
         await openaiClient.beta.threads.messages.create(threadId, {
             role: 'user',
-            content: messageContent
+            content: lastUserMessage
         });
 
         // Iniciar execução com o assistente

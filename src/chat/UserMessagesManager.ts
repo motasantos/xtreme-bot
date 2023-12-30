@@ -20,6 +20,30 @@ export interface CustomerChat {
 }
 
 export class UserMessagesManager {
+
+    async getOrCreateChatState(customerPhone: string, message: Message): Promise<CustomerChat> {
+        let chat = await this.getChat(customerPhone);
+    
+        if (!chat) {
+            chat = {
+                status: "open",
+                id: customerPhone,
+                threadId: "", // Defina o threadId, se necessário
+                chatAt: new Date().toISOString(),
+                customer: {
+                    name: "", // Nome do cliente, se disponível
+                    phone: customerPhone
+                },
+                messages: [message]
+            };
+        } else {
+            chat.messages.push(message);
+        }
+    
+        await this.createOrUpdateChat(customerPhone, chat);
+        return chat;
+    }
+    
     async createOrUpdateChat(customerPhone: string, chatData: Partial<CustomerChat>): Promise<void> {
         const key = `customerChat:${customerPhone}`;
         let chat = await this.getChat(customerPhone);
